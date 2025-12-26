@@ -1,6 +1,6 @@
 /* 
     ORBIT COCKPIT ENGINE 
-    v1.0 | Data-Driven Bio-Feedback
+    v1.1 | Fixed Column Mapping
 */
 
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlbiHy3EJ1XoBwp4TD8r45-nM3P1MqYLxDCvbKfNSkBZbNArv4jsYx_BobpiiMsl_sCCoSEW0VGS83/pub?gid=1193155342&single=true&output=csv';
@@ -28,7 +28,7 @@ async function fetchData() {
     }
 }
 
-/* --- CORE: CSV PARSER (Handles Commas in "Fuel" Checkboxes) --- */
+/* --- CORE: CSV PARSER --- */
 function parseCSV(text) {
     const rows = [];
     let currentRow = [];
@@ -40,7 +40,7 @@ function parseCSV(text) {
         const nextChar = text[i + 1];
 
         if (char === '"') {
-            if (insideQuotes && nextChar === '"') { i++; currentCell += '"'; } // Escaped quote
+            if (insideQuotes && nextChar === '"') { i++; currentCell += '"'; } 
             else { insideQuotes = !insideQuotes; }
         } else if (char === ',' && !insideQuotes) {
             currentRow.push(currentCell.trim());
@@ -63,39 +63,38 @@ function updateHUD(data) {
     if (data.length === 0) return;
 
     const latest = data[0]; 
-    // Mapping indices based on Step 1 Schema:
-    // 0:Time, 1:Activity, 2:Speed, 3:Dur, 4:Sleep, 5:Fuel, 6:Hygiene, 7:Weight, 8:Cycle, 9:Vibe
     
-    // 1. BATTERY (Sleep)
-    const sleep = parseFloat(latest[4]) || 0;
+    // CORRECTED MAPPING (Indices shifted +1 due to "Date" column):
+    // 0:Timestamp, 1:Date, 2:Activity, 3:Speed, 4:Duration, 
+    // 5:Sleep, 6:Fuel, 7:Hygiene, 8:Weight, 9:Cycle, 10:Vibe
+
+    // 1. BATTERY (Sleep is Index 5)
+    const sleep = parseFloat(latest[5]) || 0;
     const batteryLevel = document.getElementById('battery-level');
     const sleepStat = document.getElementById('sleep-stat');
     
-    // Logic: 8hrs = 100%, 4hrs = 0% (Red Zone)
     let percentage = Math.min(100, Math.max(0, (sleep / 8) * 100));
     batteryLevel.style.width = `${percentage}%`;
     sleepStat.innerText = `${sleep} hrs`;
 
     if (sleep < 5) batteryLevel.style.background = 'var(--color-alert)';
     else if (sleep < 7) batteryLevel.style.background = 'var(--color-warn)';
-    else batteryLevel.style.background = 'var(--color-accent-2)'; // Green
+    else batteryLevel.style.background = 'var(--color-accent-2)'; 
 
-    // 2. SPEEDOMETER
-    const speed = parseFloat(latest[2]) || 0;
+    // 2. SPEEDOMETER (Speed is Index 3)
+    const speed = parseFloat(latest[3]) || 0;
     document.getElementById('avg-speed').innerText = speed;
     const speedGauge = document.getElementById('speed-gauge');
     
-    // Visual: 4.4 is the goal (100% full rotation). Scale: 3.0 to 5.0
-    // Simple width mapping for now (can be upgraded to rotation later)
     let speedPercent = Math.min(100, ((speed - 3) / 2) * 100); 
     speedGauge.style.width = `${speedPercent}%`;
 
     // 3. PIZZA PROGRESS (Streak)
-    // Count valid workouts in last 14 entries
+    // Activity is Index 2
     let streak = 0;
     const window = data.slice(0, 14);
     window.forEach(row => {
-        if (row[1] === 'Treadmill' || row[1] === 'House Cleaning') streak++;
+        if (row[2] === 'Treadmill' || row[2] === 'House Cleaning') streak++;
     });
     
     document.getElementById('streak-count').innerText = `${streak} / 14 Days`;
@@ -111,15 +110,14 @@ function renderHeatmap(data) {
     const grid = document.getElementById('heatmap-grid');
     grid.innerHTML = '';
     
-    // Show last 28 days
     const recent = data.slice(0, 28).reverse(); 
     
     recent.forEach(row => {
         const div = document.createElement('div');
         div.className = 'heat-box';
         
-        const type = row[1];
-        const cycle = row[8]; // Cycle Status
+        const type = row[2]; // Activity Index 2
+        const cycle = row[9]; // Cycle Index 9
         
         if (cycle === 'Period') {
             div.classList.add('period-mode');
@@ -129,30 +127,27 @@ function renderHeatmap(data) {
         else if (type === 'House Cleaning') div.classList.add('maintenance');
         else div.classList.add('rest');
 
-        // Tooltip
-        div.title = `${row[0].split(' ')[0]}: ${type}`;
+        div.title = `${row[1]}: ${type}`; // Date is Index 1
         grid.appendChild(div);
     });
 }
 
 /* --- SECTION 3: GHOST WEIGHT CHART --- */
 function renderGhostWeight(data) {
-    // Need chronological order for chart
     const chronological = [...data].reverse();
     const svg = document.getElementById('weight-chart');
-    
-    // Extract valid weight points
+    svg.innerHTML = ''; // Clear previous renders
+
     let points = [];
     chronological.forEach((row, index) => {
-        let w = parseFloat(row[7]); // Weight Log
+        let w = parseFloat(row[8]); // Weight Index 8
         if (!isNaN(w)) {
-            points.push({ val: w, type: row[8], index: index });
+            points.push({ val: w, type: row[9], index: index }); // Cycle Index 9
         }
     });
 
     if (points.length < 2) return;
 
-    // Scaling
     const maxW = Math.max(...points.map(p => p.val)) + 1;
     const minW = Math.min(...points.map(p => p.val)) - 1;
     const width = 1000;
@@ -161,22 +156,19 @@ function renderGhostWeight(data) {
     const getX = (i) => (i / (points.length - 1)) * width;
     const getY = (w) => height - ((w - minW) / (maxW - minW)) * height;
 
-    // Draw Line
     let pathD = `M ${getX(0)} ${getY(points[0].val)}`;
     points.forEach((p, i) => {
         pathD += ` L ${getX(i)} ${getY(p.val)}`;
         
-        // Draw Dots
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', getX(i));
         circle.setAttribute('cy', getY(p.val));
         circle.setAttribute('r', 5);
         
-        // Color logic based on "Cycle" (Ghost Weight)
         if (p.type === 'Period' || p.type === 'Feast') {
-            circle.setAttribute('fill', '#9D4EDD'); // Purple for spikes
+            circle.setAttribute('fill', '#9D4EDD'); 
         } else {
-            circle.setAttribute('fill', '#00F0FF'); // Cyan for true weight
+            circle.setAttribute('fill', '#00F0FF'); 
         }
         svg.appendChild(circle);
     });
@@ -196,18 +188,17 @@ function renderTable(data) {
 
     data.forEach(row => {
         const tr = document.createElement('tr');
-        
-        // Safe access helper
         const get = (i) => row[i] || '-';
 
+        // 1:Date, 2:Activity, 3:Speed, 4:Dur, 5:Sleep, 8:Weight, 10:Vibe
         tr.innerHTML = `
-            <td>${get(0).split(' ')[0]}</td>
             <td>${get(1)}</td>
-            <td class="font-mono">${get(2)}</td>
+            <td>${get(2)}</td>
             <td class="font-mono">${get(3)}</td>
             <td class="font-mono">${get(4)}</td>
-            <td class="font-mono">${get(7)}</td>
-            <td><span class="tag ${get(9).toLowerCase()}">${get(9)}</span></td>
+            <td class="font-mono">${get(5)}</td>
+            <td class="font-mono">${get(8)}</td>
+            <td><span class="tag ${get(10).toLowerCase()}">${get(10)}</span></td>
         `;
         tbody.appendChild(tr);
     });
