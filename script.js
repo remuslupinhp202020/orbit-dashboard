@@ -11,8 +11,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function fetchData() {
     try {
-        const response = await fetch(SHEET_URL);
+        // Add timestamp to force fresh data (Bypass Cache)
+        const cacheBuster = `&t=${new Date().getTime()}`;
+        const response = await fetch(SHEET_URL + cacheBuster);
         const data = await response.text();
+        
+        console.log("Raw CSV Data:", data); // Debugging: Check console (F12) if still empty
+
         const parsedData = parseCSV(data);
         
         // Remove header row and reverse to show newest first
