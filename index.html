@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORBIT // Treadmill Cockpit</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Importing Fonts: Inter (Text) and JetBrains Mono (Numbers/Data) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- HEADER: Title & Input Trigger -->
+        <header>
+            <div class="brand">
+                <h1>ORBIT <span class="version">v1.0</span></h1>
+                <p class="motto">Discipline is doing it. Wisdom is resting.</p>
+            </div>
+            <!-- REPLACE '#' WITH YOUR GOOGLE FORM EDIT LINK -->
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSf01lnogm91EhWe3MG6FDqZermdPBF3YkL9_wXr8_ZxlEb5LQ/viewform?usp=sharing&ouid=114728699733237187797" target="_blank" class="btn-launch">
+                <span class="icon">🚀</span> LOG DATA
+            </a>
+        </header>
+
+        <!-- SECTION 1: THE HUD (Bio-Feedback) -->
+        <section class="hud-grid">
+            <!-- The Battery (Sleep) -->
+            <div class="card battery-card">
+                <h3>SYSTEM ENERGY</h3>
+                <div class="battery-visual">
+                    <div id="battery-level" class="level"></div>
+                </div>
+                <div class="stat-value" id="sleep-stat">-- hrs</div>
+            </div>
+
+            <!-- The Speedometer -->
+            <div class="card speed-card">
+                <h3>TARGET VELOCITY</h3>
+                <div class="gauge-wrapper">
+                    <div class="gauge-bg"></div>
+                    <div class="gauge-fill" id="speed-gauge"></div>
+                    <div class="gauge-cover">
+                        <span id="avg-speed">--</span>
+                        <span class="unit">km/h</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pizza Progress (Gamification) -->
+            <div class="card pizza-card">
+                <h3>FEAST UNLOCK</h3>
+                <div class="progress-bar-container">
+                    <div id="pizza-bar" class="progress-fill"></div>
+                </div>
+                <div class="stat-sub" id="streak-count">0 / 14 Days</div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: CONSISTENCY HEATMAP -->
+        <section class="card heatmap-section">
+            <h3>CONSISTENCY MATRIX</h3>
+            <div id="heatmap-grid" class="heatmap-grid">
+                <!-- JS will inject squares here -->
+            </div>
+        </section>
+
+        <!-- SECTION 3: THE TRUTH (Ghost Weight Analytics) -->
+        <section class="card analytics-card">
+            <h3>GHOST WEIGHT TREND</h3>
+            <!-- Simple CSS/SVG Chart Container -->
+            <div class="chart-container">
+                <svg id="weight-chart" viewBox="0 0 1000 200" preserveAspectRatio="none">
+                    <!-- JS will draw lines here -->
+                </svg>
+            </div>
+            <div class="chart-legend">
+                <span class="dot raw"></span> Raw
+                <span class="dot true"></span> True Trend
+                <span class="dot period"></span> Cycle
+            </div>
+        </section>
+
+        <!-- SECTION 4: THE ARCHIVE (Raw Data Table) -->
+        <section class="card table-section">
+            <h3>LOG ARCHIVE</h3>
+            <div class="table-wrapper">
+                <table id="data-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="date">Date</th>
+                            <th data-sort="activity">Activity</th>
+                            <th data-sort="speed">Speed</th>
+                            <th data-sort="duration">Dur</th>
+                            <th data-sort="sleep">Sleep</th>
+                            <th data-sort="weight">Weight</th>
+                            <th data-sort="vibe">Vibe</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- JS will insert rows here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
